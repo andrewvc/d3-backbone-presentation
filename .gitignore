@@ -1,0 +1,15 @@
+classes/*
+*.swp
+*.swo
+lib/*
+*.jar
+.idea/**
+.idea/.*
+.lein-deps-sum
+.DS_Store
+*~
+\#*#
+.\#*#
+.#*
+vendor/bundle
+.lein-failures

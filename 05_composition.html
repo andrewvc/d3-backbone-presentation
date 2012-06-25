@@ -1,0 +1,122 @@
+<html>
+  <head>
+    <style type='text/css'>
+      #vis {
+        height: 500px;
+        width:  500px;
+        border: 1px solid red;
+        position: relative
+      }
+      #vis div {
+        border: 1px solid blue;
+        background: rgba(50, 50, 255,0.3);
+        position: absolute;
+      }
+    </style>
+    <script type="text/javascript" src="lib/jquery.js"></script>
+    <script type="text/javascript" src="lib/d3.js"></script>
+    <script type="text/javascript" src="lib/underscore.js"></script>
+    <script type="text/javascript" src="lib/backbone.js"></script>
+    <script type="text/javascript">
+      NumberStream = function (addr) {
+        this.addr = addr;
+        _.extend(this, Backbone.Events);
+        var self = this;
+  
+        if (typeof(WebSocket) !== 'undefined') {
+          console.log("Using a standard websocket");
+          self.socket = new WebSocket(this.addr);
+        } else if (typeof(MozWebSocket) !== 'undefined') {
+          console.log("Using MozWebSocket")
+          self.socket = new MozWebSocket(this.addr);
+        } else {
+          alert("Your browser does not support web sockets. No stats for you!");
+        }
+      
+        self.socket.onopen = function (e) {
+          self.trigger('open', e);
+        };
+        self.socket.onmessage = function (e) {
+          self.trigger('message', e);
+          self.trigger('data', e.data);
+          
+          self.trigger('number', parseInt(e.data, 10));
+        };
+      
+        self.socket.onclose = function (e) {
+          self.trigger('close', e);
+        };
+        self.socket.onerror = function (e) {
+          self.trigger('error', e);
+        };
+      };
+
+      NumberSequence = Backbone.Model.extend({
+        initialize: function (opts) {
+          this.stream = opts.stream;
+          var self = this;
+          this.stream.on('number', function (n) {
+            var ns =  self.get('numbers');
+            ns.push([(new Date()).getTime(), n]);
+            if (ns.length > 10) { ns.shift(); }
+            self.set({numbers: ns});
+            self.trigger('change');
+          });
+        },
+        defaults: {
+          numbers: []
+        }
+      });
+
+      var util = {};
+      util.dval = function (d) { return d[1] };
+      util.mult = function (m) { return function(d) { return (m * d) }};
+      util.toPx = function (d) { return d + 'px'};
+      util.multPx = function(m) { return _.compose(util.toPx, util.mult(m), util.dval) };
+      util.dataPx = _.compose(util.toPx, util.dval);
+      
+      window.util = util;
+      var NumberChart = Backbone.View.extend({
+        id: 'vis',
+        initialize: function () {
+          $('#vis-cont').append(this.el);
+          this.model.on('change', this.render, this);
+          this.vis = d3.select(this.el);
+        },
+        render: function () {
+          var visd = this.vis.selectAll('div')
+             .data(this.model.get('numbers'), function(d) { return d[0]; });
+          visd.enter()
+             .append('div')
+             .transition()
+             .duration(1000)
+             .style('width', util.multPx(1.5))
+             .style('height', util.multPx(1.5))
+             .style("top", util.dataPx)
+             .style("left", util.dataPx);
+      
+          visd.exit()
+              .style('background-color', '#FFFF00')
+              .transition()
+              .duration(400)
+              .style('width', 0)
+              .style('height', 0)
+              .style('opacity', 0)
+              .remove();
+        }
+      });
+      
+      $(function () {
+        var numStream = new NumberStream("ws://localhost:3000/rand");
+        var numSeq = new NumberSequence({stream: numStream});
+        var numChart = new NumberChart({model: numSeq});
+      });
+
+    </script>
+  </head>
+  <body>
+    <h1>Data-driven drawing</h1>
+    <div id="vis-cont">
+    </div>
+  </body>
+</html>

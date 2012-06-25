@@ -1,0 +1,77 @@
+<html>
+  <head>
+    <style type='text/css'>
+      #vis {
+        height: 500px;
+        width:  500px;
+        border: 1px solid red;
+        position: relative
+      }
+      #vis div {
+        border: 1px solid blue;
+        background: rgba(50, 50, 255,0.3);
+        position: absolute;
+      }
+    </style>
+    <script type="text/javascript" src="lib/jquery.js"></script>
+    <script type="text/javascript" src="lib/d3.js"></script>
+    <script type="text/javascript" src="lib/underscore.js"></script>
+    <script type="text/javascript">
+      var fib = function (n) {
+        var a = 0, b = 1, t;
+        while (n-- > 0)  {
+          t = a;
+          a = b;
+          b += t;
+        }
+        return a;
+      };
+
+      var toPx = function (i) {
+        return(i + 'px');
+      };
+      
+      
+      $(function () {
+        var vis = d3.select("#vis");
+        
+        var pos = 1;
+        var getNext = function (callback) {
+          pos++;
+          var res = fib(pos);
+          callback(res);
+          console.log("At pos", pos, res);
+        };
+        
+        var series = []
+        var whTransform = function (d) { return d * 2.5 + 'px' };
+        var render = function (n) {
+          series.push(n);
+          vis.selectAll('div')
+             .data(series)
+             .enter()
+             .append('div')
+             .style("top", toPx)
+             .style("left", toPx)
+             .transition()
+             .duration(1000)
+             .style('width', whTransform)
+             .style('height', whTransform);
+        };
+  
+        var init = function() {
+          render(1);
+          setInterval(function () { getNext(render); }, 1000);
+        };
+
+        init();
+      });
+
+    </script>
+  </head>
+  <body>
+    <h1>Data-driven drawing</h1>
+    <div id="vis">
+    </div>
+  </body>
+</html>
