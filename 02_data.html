@@ -28,19 +28,20 @@
         var fibs = [1, 1, 2, 3, 5, 8, 13, 21];
 
         var vis = d3.select("#vis");
-        vis.selectAll("div")
-           .data(fibs)
-           .enter()
-           .append('div')
-           .style("top", toPx)
-           .style("left", toPx);
+        
+        vis.                            // Within the scope of 'vis'
+          selectAll('div').             // Given that we're visualizing divs
+           data(fibs).                  // using the following data
+             enter().                   // when new data appears
+               append('div').           // append a div
+                 style("top", toPx).    // Deriving the 'top' val through toPx(v)
+                 style("left", toPx);   // Deriving the 'left' val through toPx(v)
       });
 
     </script>
   </head>
   <body>
     <h1>Data-driven drawing</h1>
-    <div id="vis">
-    </div>
+    <div id="vis"></div>
   </body>
 </html>

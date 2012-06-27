@@ -24,7 +24,7 @@
         var self = this;
   
         if (typeof(WebSocket) !== 'undefined') {
-        console.log("Using a standard websocket");
+          console.log("Using a standard websocket");
           self.socket = new WebSocket(this.addr);
         } else if (typeof(MozWebSocket) !== 'undefined') {
           console.log("Using MozWebSocket")
@@ -40,7 +40,7 @@
           self.trigger('message', e);
           self.trigger('data', e.data);
           
-          self.trigger('number', parseInt(e.data, 10));
+          self.trigger('point', e.data.split(/ +/))
         };
       
         self.socket.onclose = function (e) {
@@ -55,19 +55,24 @@
         initialize: function (opts) {
           this.stream = opts.stream;
           var self = this;
-          this.stream.on('number', function (n) {
-            var ns =  self.get('numbers');
-            ns.push([(new Date()).getTime(), n]);
-            if (ns.length > 10) { ns.shift(); }
-            console.log(ns[0]);
-            self.set({numbers: ns});
-            self.trigger('change');
+          this.stream.on('point', function (pt) {
+            var points = self.get('points');
+            var updated = (new Date()).getTime()                   
+            //Tuple like [12321312182, [10, 20]]
+            points.push([updated, pt]); 
+      
+            // Max 10 elems kept
+            if (points.length > 10) { points.shift(); }
+      
+            self.set({points: points, last_update: updated});
           });
         },
         defaults: {
-          numbers: []
+          points: []
         }
       });
+
+      var visScale = d3.scale.linear().domain([0,100]).range([0,490])
 
       var NumberChart = Backbone.View.extend({
         id: 'vis',
@@ -78,27 +83,24 @@
         },
         render: function () {
           var visd = this.vis.selectAll('div')
-             .data(this.model.get('numbers'), function(d) { return d[0]; });
+             .data(this.model.get('points'),
+                   function(d) { return d[0]; });
           visd.enter()
              .append('div')
              .transition()
-             .duration(1000)
-             .style('width', this.multPx(1.5))
-             .style('height', this.multPx(1.5))
-             .style("top", this.toPx)
-             .style("left", this.toPx);
+             .duration(500)
+             .style('width', 10)
+             .style('height', 10)
+             .style("top",  function (d) {return visScale(d[1][0])})
+             .style("left", function (d) {return visScale(d[1][1])});
       
           visd.exit()
               .style('background-color', '#FFFF00')
               .transition()
-              .duration(400)
-              .style('width', this.multPx(0.5))
-              .style('height', this.multPx(0.5))
+              .duration(500)
               .style('opacity', 0)
               .remove();
         },
-        multPx: function (m) { return function (d) { return d[1] * m + 'px'} },
-        toPx: function (d) { return d[1] + 'px'}
       });
       
       $(function () {

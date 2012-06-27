@@ -45,18 +45,20 @@
         
         var series = []
         var whTransform = function (d) { return d * 2.5 + 'px' };
+        
         var render = function (n) {
-          series.push(n);
+          series.push(n); // Building a larger and larger dataset
+          
           vis.selectAll('div')
              .data(series)
-             .enter()
-             .append('div')
-             .style("top", toPx)
-             .style("left", toPx)
-             .transition()
-             .duration(1000)
-             .style('width', whTransform)
-             .style('height', whTransform);
+               .enter()
+                 .append('div')
+                   .style("top", toPx)
+                   .style("left", toPx)
+                   .transition()
+                     .duration(1000)
+                      .style('width', whTransform)
+                      .style('height', whTransform);
         };
   
         var init = function() {

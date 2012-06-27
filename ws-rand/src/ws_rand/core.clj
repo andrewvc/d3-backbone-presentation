@@ -8,7 +8,7 @@
    [noir.server :as nr-server] ))
 
 (na/defpage-async "/rand" {} conn
-  (na-util/set-interval 500 #(na/async-push conn (str (* 100 (rand))))))
+  (na-util/set-interval 500 #(na/async-push conn (str (* 100 (rand))  " "(* 100 (rand) )))))
 
 (defn -main [& m]
   (let [mode (keyword (or (first m) :dev))
